@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 using System.Globalization;
 
@@ -27,14 +23,14 @@ namespace RSSActivity1
             // Implimenting dictionary to test function
             IDictionary<string, List<string>> rssDict = new Dictionary<string, List<string>>();
 
-            rssDict["BillMaher"] = new List<string> { "http://billmaher.hbo.libsynpro.com/rss" };
-            rssDict["DianeRehm"] = new List<string> { "https://dianerehm.org/rss/npr/dr_podcast.xml" };
+            rssDict["Bill Maher"] = new List<string> { "http://billmaher.hbo.libsynpro.com/rss" };
+            rssDict["Diane Rehm"] = new List<string> { "https://dianerehm.org/rss/npr/dr_podcast.xml" };
             rssDict["HackerNews"] = new List<string> { "https://hnrss.org/newcomments", "https://hnrss.org/jobs" };
 
             // Given days to test function
-            int daysOfInactivity = 7;
+            int daysOfInactivity = 1;
 
-
+            // Print to console to show list of companies returned
             Console.WriteLine("Companies inactive for {0} days: {1}", daysOfInactivity, string.Join(", ", InactiveCompanies(rssDict, daysOfInactivity)));
             Console.ReadLine();
         }
@@ -47,31 +43,33 @@ namespace RSSActivity1
             List<string> companies = new List<string>();
             DateTime currentDay = DateTime.Now;
 
+            //Iterate through each item in Dictionary, then each link in each Key
             foreach (KeyValuePair<string, List<string>> item in rssDict)
             {
                 foreach (string link in item.Value)
                 {
+                    //if company not in list, use LINQ to XML to add posts to a list
                     if (!companies.Contains(item.Key))
                     {
                         XDocument doc = XDocument.Load(link);
-                        var newPost = (from element in doc.Descendants("item")
+                        var newPost = (from ele in doc.Descendants("item")
                                        select new Post
                                        {
                                            Company = item.Key,
-                                           PubDate = DateTime.ParseExact(element.Element("pubDate").Value, "ddd, dd MMM yyyy HH:mm:ss zzz", 
+                                           PubDate = DateTime.ParseExact(ele.Element("pubDate").Value, "ddd, dd MMM yyyy HH:mm:ss zzz", 
                                            CultureInfo.InvariantCulture, DateTimeStyles.None)
                                        });
+                        //find latest date in list and subtract from currentday. If difference is less or equal to given number of days, add to companies list
                         DateTime latestDate = newPost.Max(r => r.PubDate);
                         int difference = (currentDay - latestDate).Days;
                         if (days <= difference)
                         {
                             companies.Add(item.Key);
-                        }
-                        
-                    }
-                    
+                        }                        
+                    }                    
                 }                
             }
+            // Return list of companies without activity for given amount of days
             return companies;
         }
     }
